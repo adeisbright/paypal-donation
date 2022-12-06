@@ -46,19 +46,27 @@
     </main>
     <script>
         let searchParams = window.location.search 
+        let errorSection = document.querySelector(".error-screen") 
         if (!searchParams || searchParams == ""){
-            let errorSection = document.querySelector(".error-screen") 
             errorSection.classList.remove("hide")
         }else {
             const params = new URLSearchParams(searchParams);
             const buttonId = params.get("button_id"); 
-            console.log(buttonId)
+            const userId = params.get("user_id") 
+            const churchId = params.get("church_id")
+
+            if (!churchId || churchId.length === 0 || 
+                !userId || userId.length === 0 || 
+                !buttonId || buttonId.length === 0)
+            {
+                errorSection.classList.remove("hide")
+            }
             
-        
+            
+
             PayPal.Donation.Button({
                 env: 'sandbox',
                 hosted_button_id: buttonId,
-                // business: 'YOUR_EMAIL_OR_PAYERID',
                 image: {
                     src: 'https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif',
                     title: 'PayPal - The safer, easier way to pay online!',
@@ -67,7 +75,31 @@
                 onComplete: function (params) {
                     // Your onComplete handler
                     console.log(params)
-                    console.log("Payment was completed")
+                    if (params.st.toLowerCase() === "completed"){
+                        const {amt , item_name , tx} = params 
+
+                        (async () => {
+                            const rawResponse = await fetch('https://intachurch.herokuapp.com/api/v1/donations/donate', {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    "authorization": "Bearer MTIwNA.HYzWQtHA0ww20P7WGsOXWzi0LhdEngFJVwdDarXbac2j5oECG3WIl0DEE4xo"
+                                },
+                                body: JSON.stringify({
+                                    "amount": amt,
+                                    "type": item_name,
+                                    "frequency": "one",
+                                    "mode": "stripe",
+                                    "transactionId": tx,
+                                    "donationCategoryId": 1
+                                })
+                            });
+                            const content = await rawResponse.json();
+
+                            console.log(content);
+                        })();
+                    }
                 },
             }).render('#paypal-donate-button-container');
         }
