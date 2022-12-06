@@ -52,13 +52,11 @@
         }else {
             const params = new URLSearchParams(searchParams);
             const buttonId = params.get("button_id"); 
-            const userId = params.get("user_id") 
-            const churchId = params.get("church_id")
+            const categoryId = params.get("category_id"); 
 
-            if (!churchId || churchId.length === 0 || 
-                !userId || userId.length === 0 || 
-                !buttonId || buttonId.length === 0)
-            {
+            if (
+                !buttonId || buttonId.length === 0 ||  
+                !categoryId || categoryId.length === 0){
                 errorSection.classList.remove("hide")
             }
             
@@ -72,32 +70,28 @@
                     title: 'PayPal - The safer, easier way to pay online!',
                     alt: 'Donate with PayPal button'
                 },
-                onComplete: function (params) {
-                    // Your onComplete handler
-                    console.log(params)
+                onComplete: async function (params) {
                     const {amt , item_name , tx} = params 
+                    
+                    const rawResponse = await fetch('https://intachurch.herokuapp.com/api/v1/donations/donate', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            "authorization": "Bearer MTIwNA.HYzWQtHA0ww20P7WGsOXWzi0LhdEngFJVwdDarXbac2j5oECG3WIl0DEE4xo"
+                        },
+                        body: JSON.stringify({
+                            "amount": amt,
+                            "type": item_name,
+                            "frequency": "one",
+                            "mode": "stripe",
+                            "transactionId": tx,
+                            "donationCategoryId": Number(categoryId)
+                        })
+                    });
+                    const content = await rawResponse.json();
 
-                    (async () => {
-                        const rawResponse = await fetch('https://intachurch.herokuapp.com/api/v1/donations/donate', {
-                            method: 'POST',
-                            headers: {
-                                'Accept': 'application/json',
-                                'Content-Type': 'application/json',
-                                "authorization": "Bearer MTIwNA.HYzWQtHA0ww20P7WGsOXWzi0LhdEngFJVwdDarXbac2j5oECG3WIl0DEE4xo"
-                            },
-                            body: JSON.stringify({
-                                "amount": amt,
-                                "type": item_name,
-                                "frequency": "one",
-                                "mode": "stripe",
-                                "transactionId": tx,
-                                "donationCategoryId": 1
-                            })
-                        });
-                        const content = await rawResponse.json();
-
-                        console.log(content);
-                    })();
+                    console.log(content);
                 },
             }).render('#paypal-donate-button-container');
         }
