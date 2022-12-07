@@ -53,15 +53,16 @@
             const params = new URLSearchParams(searchParams);
             const buttonId = params.get("button_id"); 
             const categoryId = params.get("category_id"); 
+            const token = params.get("token"); 
 
             if (
                 !buttonId || buttonId.length === 0 ||  
-                !categoryId || categoryId.length === 0){
+                !categoryId || categoryId.length === 0 || 
+                !token || token.length === 0
+            ){
                 errorSection.classList.remove("hide")
             }
             
-            
-
             PayPal.Donation.Button({
                 env: 'sandbox',
                 hosted_button_id: buttonId,
@@ -78,7 +79,7 @@
                         headers: {
                             'Accept': 'application/json',
                             'Content-Type': 'application/json',
-                            "authorization": "Bearer MTIwNA.HYzWQtHA0ww20P7WGsOXWzi0LhdEngFJVwdDarXbac2j5oECG3WIl0DEE4xo"
+                            "authorization": `Bearer ${token}`
                         },
                         body: JSON.stringify({
                             "amount": amt,
